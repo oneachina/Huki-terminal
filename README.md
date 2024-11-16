@@ -34,7 +34,7 @@ A GUI terminal by Python3.
 - [作者](#作者)
 
 ### 上手指南
-1. 在 GitHub 中下载最新的 [Releases](https://github.com/CodeCrafter-TL/python-cmd/releases) 。
+1. 在 GitHub 中下载最新的 [Release](https://github.com/CodeCrafter-TL/python-cmd/releases) 。
 
 2. 在工作目录中执行如下命令:
 ```bash
@@ -80,7 +80,7 @@ python-cmd-main
 
 ![mail-163](https://img.shields.io/badge/email_163-CodeCrafterTL@163.com-red)
 
-![github](https://img.shields.io/badge/mail-CodeCrafterTL-green?logo=github)
+![github](https://img.shields.io/badge/GitHub-CodeCrafterTL-green?logo=github)
 
 *您也可以在贡献者名单中参看所有**参与该项目的开发者**。*
 
