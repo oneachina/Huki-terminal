@@ -133,7 +133,7 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
                         processed_args = []
                         for arg in args:
                             processed_args.append(f'"{str(arg)}"')
-                        eval(f"self.{method_name}({
+                        eval(f"self.{method_name}({\
                              ', '.join(processed_args)})")
                     except NameError as e:
                         self.error([CMD_NOT_FOUND, COLON, command])
