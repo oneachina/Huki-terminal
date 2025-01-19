@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -68,7 +69,13 @@ class CustomPlainTextEdit(QtWidgets.QPlainTextEdit):
             self.parent().parent().parent().error(str(e) + "\n")
 
 
-class MyMainForm(QMainWindow, Ui_MainWindow):
+class MainForm(QMainWindow, Ui_MainWindow):
+    # 日志记录设置
+    logging_enabled = True  # 默认开启日志记录
+    log_file_path = None
+    log_file_max_size = 10240  # 默认日志文件最大大小为10KB
+    log_file_max_age = 30  # 默认日志文件保留时间为30天
+    log_file_max_count = 10  # 默认日志文件保留数量为1
     name = CONFIG["name"][0]
     version = CONFIG["version"][0]
     welcome = f"{name} {version}\n{ \
@@ -86,12 +93,16 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         "del": "remove",
         "ls": "ls",
         "dir": "ls",
-        "help": "help"
+        "help": "help",
+        "setting": "setting"  # add setting command
     }
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(MainForm, self).__init__(parent)
+        self.args = None
         self.setupUi(self)
+        self.create_config_file()
+        self.init_logging()
         self.start_x = None
         self.start_y = None
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
@@ -114,11 +125,107 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
         # onea end
 
+    def create_config_file(self):
+        user_folder = os.path.expanduser("~")
+        config_folder = os.path.join(user_folder, ".pcmd")
+        config_file = os.path.join(config_folder, "config.json")
+
+        if not os.path.exists(config_folder):
+            os.makedirs(config_folder)
+
+        if not os.path.exists(config_file):
+            # 创建一个新的配置对象
+            config_data = {"logging_enabled": True,
+                           "log_file_max_size": 10240,
+                           "log_file_max_age": 30,
+                           "log_file_max_count": 10,
+                           }
+        else:
+            # 如果文件存在，读取文件内容
+            with open(config_file, "r") as f:
+                config_data = json.load(f)
+
+        # 将更新后的配置数据写回文件
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=4)
+
+    def init_logging(self):
+        user_folder = os.path.expanduser("~")
+        config_folder = os.path.join(user_folder, ".pcmd")
+        config_file = os.path.join(config_folder, "config.json")
+
+        if not os.path.exists(config_folder):
+            os.makedirs(config_folder)
+
+        if not os.path.exists(config_file):
+            # 如果 config.json 不存在，创建一个默认的配置文件
+            self.create_config_file()
+
+        self.load_logging_settings()
+
+    def load_logging_settings(self):
+        user_folder = os.path.expanduser("~")
+        config_folder = os.path.join(user_folder, ".pcmd")
+        config_file = os.path.join(config_folder, "config.json")
+
+        if os.path.exists(config_file):
+            with open(config_file, "r") as f:
+                config_data = json.load(f)
+
+            self.logging_enabled = config_data.get("logging_enabled", True)
+            self.log_file_max_size = config_data.get("log_file_max_size", 10240)
+            self.log_file_max_age = config_data.get("log_file_max_age", 30)
+            self.log_file_max_count = config_data.get("log_file_max_count", 10)
+
+    def save_log(self, message):
+        if not self.logging_enabled:
+            return
+
+        if not self.log_file_path:
+            self.init_logging()
+
+        with open(self.log_file_path, "a") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+
+        # 检查日志文件大小并清理旧日志
+        self.cleanup_logs()
+
+    def cleanup_logs(self):
+        if not self.log_file_path:
+            return
+
+        if os.path.getsize(self.log_file_path) > self.log_file_max_size:
+            self.archive_log()
+
+        log_folder = os.path.dirname(self.log_file_path)
+        log_files = [f for f in os.listdir(log_folder) if f.startswith("pcmd_log")]
+        log_files.sort(key=lambda x: os.path.getmtime(os.path.join(log_folder, x)))
+
+        while len(log_files) > self.log_file_max_count:
+            os.remove(os.path.join(log_folder, log_files.pop(0)))
+
+    def archive_log(self):
+        if not self.log_file_path:
+            return
+
+        log_folder = os.path.dirname(self.log_file_path)
+        log_file_base = os.path.basename(self.log_file_path)
+        log_file_name, log_file_ext = os.path.splitext(log_file_base)
+        archive_file_name = f"{log_file_name}_{time.strftime('%Y%m%d%H%M%S')}{log_file_ext}"
+        archive_file_path = os.path.join(log_folder, archive_file_name)
+
+        os.rename(self.log_file_path, archive_file_path)
+
+    def closeEvent(self, event):
+        self.save_log("终端关闭")
+        event.accept()
+
     def process_command(self, line_text):
         try:
             result: list | tuple = line_text.split(' ')
             command: str = result[0]
             args: list | tuple = result[1:]
+            self.args = args  # 确保 self.args 被正确赋值
 
             if command in self.COMMANDS:
                 method_name = self.COMMANDS[command]
@@ -208,13 +315,13 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            super(MyMainForm, self).mousePressEvent(event)
+            super(MainForm, self).mousePressEvent(event)
             self.start_x = event.x()
             self.start_y = event.y()
 
     def mouseMoveEvent(self, event):
         try:
-            super(MyMainForm, self).mouseMoveEvent(event)
+            super(MainForm, self).mouseMoveEvent(event)
             dis_x = event.x() - self.start_x
             dis_y = event.y() - self.start_y
             self.move(self.x() + dis_x, self.y() + dis_y)
@@ -247,6 +354,63 @@ ls: 列出目录下的文件和目录 - ls
 = dir
 help: 查看本消息 - help"""
         self.print(info)
+
+    def setting(self, command=None, config=None):
+        if command == "modify" and config == "logging_enabled":
+            try:
+                new_value = self.args[2].lower() == "true"
+                self.logging_enabled = new_value
+                self.save_logging_settings()
+                self.print(f"成功修改 logging_enabled 为 {new_value}")
+            except IndexError:
+                self.error("请提供新的 logging_enabled 值")
+        elif command == "modify" and config == "log_file_max_size":
+            try:
+                new_size = int(self.args[2])
+                self.log_file_max_size = new_size
+                self.save_logging_settings()
+                self.print(f"成功修改 log_file_max_size 为 {new_size}")
+            except IndexError:
+                self.error("请提供新的 log_file_max_size 值")
+            except ValueError:
+                self.error("请输入有效的数字作为新的 log_file_max_size")
+        elif command == "modify" and config == "log_file_max_age":
+            try:
+                new_age = int(self.args[2])
+                self.log_file_max_age = new_age
+                self.save_logging_settings()
+                self.print(f"成功修改 log_file_max_age 为 {new_age}")
+            except IndexError:
+                self.error("请提供新的 log_file_max_age 值")
+            except ValueError:
+                self.error("请输入有效的数字作为新的 log_file_max_age")
+        elif command == "modify" and config == "log_file_max_count":
+            try:
+                new_count = int(self.args[2])
+                self.log_file_max_count = new_count
+                self.save_logging_settings()
+                self.print(f"成功修改 log_file_max_count 为 {new_count}")
+            except IndexError:
+                self.error("请提供新的 log_file_max_count 值")
+            except ValueError:
+                self.error("请输入有效的数字作为新的 log_file_max_count")
+        else:
+            self.print("hello")
+
+    def save_logging_settings(self):
+        user_folder = os.path.expanduser("~")
+        config_folder = os.path.join(user_folder, ".pcmd")
+        config_file = os.path.join(config_folder, "config.json")
+
+        config_data = {
+            "logging_enabled": self.logging_enabled,
+            "log_file_max_size": self.log_file_max_size,
+            "log_file_max_age": self.log_file_max_age,
+            "log_file_max_count": self.log_file_max_count
+        }
+
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=4)
 
     def cd(self, dir_name='.'):
         global path, entry
@@ -338,6 +502,6 @@ class thread(QThread):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    myWin = MyMainForm()
+    myWin = MainForm()
     myWin.show()
     sys.exit(app.exec_())
