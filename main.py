@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-from constants import *
+from Value.constants import *
 from ui import Ui_MainWindow
 
 path = os.path.splitdrive(os.path.abspath(os.sep))[
@@ -20,7 +20,7 @@ path = os.path.splitdrive(os.path.abspath(os.sep))[
 os.chdir(path)
 CONFIG = {
     "color": ["white", str],
-    "name": ["Python cmd", str],
+    "name": ["Huki", str],
     "version": [2.0, float],
 }
 color = CONFIG["color"][0]
