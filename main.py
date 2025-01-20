@@ -94,7 +94,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         "ls": "ls",
         "dir": "ls",
         "help": "help",
-        "setting": "setting"  # add setting command
     }
 
     def __init__(self, parent=None):
@@ -121,9 +120,8 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.print(self.welcome)
         self.print(entry, end="")
 
-        # onea start
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
-        # onea end
+        self.save_log("Huki start")
 
     def create_config_file(self):
         user_folder = os.path.expanduser("~")
@@ -225,7 +223,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
             result: list | tuple = line_text.split(' ')
             command: str = result[0]
             args: list | tuple = result[1:]
-            self.args = args  # 确保 self.args 被正确赋值
 
             if command in self.COMMANDS:
                 method_name = self.COMMANDS[command]
@@ -355,48 +352,6 @@ ls: 列出目录下的文件和目录 - ls
 help: 查看本消息 - help"""
         self.print(info)
 
-    def setting(self, command=None, config=None):
-        if command == "modify" and config == "logging_enabled":
-            try:
-                new_value = self.args[2].lower() == "true"
-                self.logging_enabled = new_value
-                self.save_logging_settings()
-                self.print(f"成功修改 logging_enabled 为 {new_value}")
-            except IndexError:
-                self.error("请提供新的 logging_enabled 值")
-        elif command == "modify" and config == "log_file_max_size":
-            try:
-                new_size = int(self.args[2])
-                self.log_file_max_size = new_size
-                self.save_logging_settings()
-                self.print(f"成功修改 log_file_max_size 为 {new_size}")
-            except IndexError:
-                self.error("请提供新的 log_file_max_size 值")
-            except ValueError:
-                self.error("请输入有效的数字作为新的 log_file_max_size")
-        elif command == "modify" and config == "log_file_max_age":
-            try:
-                new_age = int(self.args[2])
-                self.log_file_max_age = new_age
-                self.save_logging_settings()
-                self.print(f"成功修改 log_file_max_age 为 {new_age}")
-            except IndexError:
-                self.error("请提供新的 log_file_max_age 值")
-            except ValueError:
-                self.error("请输入有效的数字作为新的 log_file_max_age")
-        elif command == "modify" and config == "log_file_max_count":
-            try:
-                new_count = int(self.args[2])
-                self.log_file_max_count = new_count
-                self.save_logging_settings()
-                self.print(f"成功修改 log_file_max_count 为 {new_count}")
-            except IndexError:
-                self.error("请提供新的 log_file_max_count 值")
-            except ValueError:
-                self.error("请输入有效的数字作为新的 log_file_max_count")
-        else:
-            self.print("hello")
-
     def save_logging_settings(self):
         user_folder = os.path.expanduser("~")
         config_folder = os.path.join(user_folder, ".pcmd")
@@ -465,16 +420,12 @@ help: 查看本消息 - help"""
     def ls(self):
         self.print(os.listdir(path), sep=" ")
 
-    # onea start
-    # bug:选中文本时如果打字会被覆盖
     def on_selection_changed(self):
         # 如果文本编辑框中有选中文本，则禁用输入
         if self.text_edit.textCursor().hasSelection():
             self.text_edit.setReadOnly(True)
         else:
             self.text_edit.setReadOnly(False)
-    # onea end
-
 
 class thread(QThread):
     trigger = pyqtSignal(str)
