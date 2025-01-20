@@ -3,15 +3,13 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from typing import Any
 
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 from Events.CustomPlainTextEdit import *
 from Events.Event import *
 from Value.constants import *
+from Value.data import *
 from ui import Ui_MainWindow
 from utils.Logger_utils import *
 from utils.thread_utils import *
@@ -26,6 +24,7 @@ CONFIG = {
 }
 color = CONFIG["color"][0]
 entry = f"{path}> "
+
 
 def in_path(program_name):
     path = os.environ.get('PATH')
@@ -83,8 +82,8 @@ class MainForm(QMainWindow, Ui_MainWindow):
                                      "border-radius:13px;}")
         self.text_edit.setObjectName("plainTextEdit")
 
-        self.print(self.welcome)
-        self.print(entry, end="")
+        Event.print(self, self.welcome)
+        Event.print(self, entry, end="")
 
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
 
@@ -97,9 +96,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
             result: list | tuple = line_text.split(' ')
             command: str = result[0]
             args: list | tuple = result[1:]
-            LoggerUtils.save_log(self,f"Command: {line_text}")
-            if command in self.COMMANDS:
-                method_name = self.COMMANDS[command]
+            LoggerUtils.save_log(self, f"Command: {line_text}")
+            if command in COMMANDS:
+                method_name = COMMANDS[command]
 
                 if method_name == "exit":
                     sys.exit()
@@ -125,7 +124,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
                 res = subprocess.run(
                     command, shell=True, text=True, capture_output=True, executable=executable)
                 if res.stdout:
-                    self.print([res.stdout.strip()])
+                    Event.print(self, [res.stdout.strip()])
                 elif res.stderr:
                     self.error_tuple(res.stderr.strip())
             else:
@@ -135,10 +134,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
             Event.error(self, ["\n", USET_ABORT])
             exit()
 
-        self.print(entry, end="")
-
-    def print(self, value: tuple[str] | str | list[str] | tuple[Any, ...], sep="", end=""):
-        self.text_edit.appendPlainText(sep.join(value) + end)
+        Event.print(self, entry, end="")
 
     def mouseReleaseEvent(self, event):
         self.start_x = None
@@ -173,7 +169,7 @@ rm: 删除文件 - rm <filename>
 ls: 列出目录下的文件和目录 - ls
 = dir
 help: 查看本消息 - help"""
-        self.print(info)
+        Event.print(self, info)
 
     def cd(self, dir_name='.'):
         global path, entry
@@ -184,7 +180,7 @@ help: 查看本消息 - help"""
                 path = new_path
                 entry = path + "> "
             elif dir_name == '.':
-                self.print(path)
+                Event.print(self, path)
             else:
                 new_path = os.path.join(path, dir_name)
                 os.chdir(new_path)
@@ -210,7 +206,7 @@ help: 查看本消息 - help"""
                 Event.error(self, e)
 
     def echo(self, *string):
-        self.print(string, sep=" ")
+        Event.print(self, string, sep=" ")
 
     def remove(self, filename):
         try:
@@ -226,7 +222,7 @@ help: 查看本消息 - help"""
                 Event.error(self, e)
 
     def ls(self):
-        self.print(os.listdir(path), sep=" ")
+        Event.print(self, os.listdir(path), sep=" ")
 
     def on_selection_changed(self):
         # 如果文本编辑框中有选中文本，则禁用输入
@@ -234,6 +230,7 @@ help: 查看本消息 - help"""
             self.text_edit.setReadOnly(True)
         else:
             self.text_edit.setReadOnly(False)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

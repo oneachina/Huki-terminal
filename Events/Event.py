@@ -58,3 +58,6 @@ class Event(Ui_MainWindow):
 
         cursor.setCharFormat(QtGui.QTextCharFormat())
         self.text_edit.setTextCursor(cursor)
+
+    def print(self, value: tuple[str] | str | list[str] | tuple[Any, ...], sep="", end=""):
+        self.text_edit.appendPlainText(sep.join(value) + end)

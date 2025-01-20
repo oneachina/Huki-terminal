@@ -12,3 +12,17 @@ class Config:
     log_file_max_age: int = 30  # 默认日志文件保留时间为30天
     log_file_max_count: int = 10  # 默认日志文件保留数量为10
 
+COMMANDS = {
+        "exit": "exit",
+        "echo": "echo",
+        "cd": "cd",
+        "chdir": "cd",
+        "mkdir": "mkdir",
+        "md": "mkdir",
+        "rm": "remove",
+        "remove": "remove",
+        "del": "remove",
+        "ls": "ls",
+        "dir": "ls",
+        "help": "help",
+    }
