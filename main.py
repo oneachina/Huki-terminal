@@ -69,6 +69,43 @@ class CustomPlainTextEdit(QtWidgets.QPlainTextEdit):
             self.parent().parent().parent().error(str(e) + "\n")
 
 
+def in_path(program_name):
+    path = os.environ.get('PATH')
+    directories = path.split(os.pathsep)
+
+    for directory in directories:
+        program_path = os.path.join(directory, program_name)
+        if os.path.isfile(program_path) or os.path.isfile(program_path + '.exe') or os.path.exists(
+                path + program_path):
+            return True
+    return False
+
+
+def create_config_file():
+    user_folder = os.path.expanduser("~")
+    config_folder = os.path.join(user_folder, ".huki")
+    config_file = os.path.join(config_folder, "config.json")
+
+    if not os.path.exists(config_folder):
+        os.makedirs(config_folder)
+
+    if not os.path.exists(config_file):
+        # 创建一个新的配置对象
+        config_data = {"logging_enabled": True,
+                       "log_file_max_size": 10240,
+                       "log_file_max_age": 30,
+                       "log_file_max_count": 10,
+                       }
+    else:
+        # 如果文件存在，读取文件内容
+        with open(config_file, "r") as f:
+            config_data = json.load(f)
+
+    # 将更新后的配置数据写回文件
+    with open(config_file, "w") as f:
+        json.dump(config_data, f, indent=4)
+
+
 class MainForm(QMainWindow, Ui_MainWindow):
     # 日志记录设置
     logging_enabled = True  # 默认开启日志记录
@@ -100,7 +137,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.log_file_path = None
         self.args = None
         self.setupUi(self)
-        self.create_config_file()
+        create_config_file()
         self.init_logging()
         self.save_log("Huki start")
         self.start_x = None
@@ -123,33 +160,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
 
-    def create_config_file(self):
-        user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".pcmd")
-        config_file = os.path.join(config_folder, "config.json")
-
-        if not os.path.exists(config_folder):
-            os.makedirs(config_folder)
-
-        if not os.path.exists(config_file):
-            # 创建一个新的配置对象
-            config_data = {"logging_enabled": True,
-                           "log_file_max_size": 10240,
-                           "log_file_max_age": 30,
-                           "log_file_max_count": 10,
-                           }
-        else:
-            # 如果文件存在，读取文件内容
-            with open(config_file, "r") as f:
-                config_data = json.load(f)
-
-        # 将更新后的配置数据写回文件
-        with open(config_file, "w") as f:
-            json.dump(config_data, f, indent=4)
-
     def init_logging(self):
         user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".pcmd")
+        config_folder = os.path.join(user_folder, ".huki")
         config_file = os.path.join(config_folder, "config.json")
 
         if not os.path.exists(config_folder):
@@ -157,16 +170,32 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
         if not os.path.exists(config_file):
             # 如果 config.json 不存在，创建一个默认的配置文件
-            self.create_config_file()
+            create_config_file()
 
         self.load_logging_settings()
 
         # 设置日志文件路径为 config.json 所在的文件夹
-        self.log_file_path = os.path.join(config_folder, "huki.log")
+        timestamp = time.strftime("%Y_%m_%d")
+        self.log_file_path = os.path.join(config_folder, f"huki_log_{timestamp}.txt")
+
+    def save_logging_settings(self):
+        user_folder = os.path.expanduser("~")
+        config_folder = os.path.join(user_folder, ".huki")
+        config_file = os.path.join(config_folder, "config.json")
+
+        config_data = {
+            "logging_enabled": self.logging_enabled,
+            "log_file_max_size": self.log_file_max_size,
+            "log_file_max_age": self.log_file_max_age,
+            "log_file_max_count": self.log_file_max_count
+        }
+
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=4)
 
     def load_logging_settings(self):
         user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".pcmd")
+        config_folder = os.path.join(user_folder, ".huki")
         config_file = os.path.join(config_folder, "config.json")
 
         if os.path.exists(config_file):
@@ -226,10 +255,10 @@ class MainForm(QMainWindow, Ui_MainWindow):
             result: list | tuple = line_text.split(' ')
             command: str = result[0]
             args: list | tuple = result[1:]
-
+            self.save_log(f"Command: {line_text}")
             if command in self.COMMANDS:
                 method_name = self.COMMANDS[command]
-                self.save_log(f"Command: {line_text}")
+
                 if method_name == "exit":
                     sys.exit()
                 else:
@@ -239,14 +268,14 @@ class MainForm(QMainWindow, Ui_MainWindow):
                             processed_args.append(f'"{str(arg)}"')
                         eval(f"self.{method_name}({ \
                             ', '.join(processed_args)})")
-                    except NameError as e:
+                    except NameError:
                         self.error([CMD_NOT_FOUND, COLON, command])
                     except TypeError as e:
                         if re.search(r'takes \d+ positional argument', str(e)):
                             self.error([command, COLON, LARGE_ARG])
                         elif re.search(r'missing \d+ required positional argument', str(e)):
                             self.error([command, COLON, MISS_ARG])
-            elif self.in_path(command):
+            elif in_path(command):
                 if os.name == 'nt':
                     executable = 'cmd'
                 else:
@@ -258,6 +287,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
                 elif res.stderr:
                     self.error_tuple(res.stderr.strip())
             else:
+                self.save_log(f"Command not found: {command}")
                 self.error([CMD_NOT_DEFINED, COLON, command])
         except (KeyboardInterrupt, EOFError):
             self.error(["\n", USET_ABORT])
@@ -329,17 +359,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         except:
             pass
 
-    def in_path(self, program_name):
-        path = os.environ.get('PATH')
-        directories = path.split(os.pathsep)
-
-        for directory in directories:
-            program_path = os.path.join(directory, program_name)
-            if os.path.isfile(program_path) or os.path.isfile(program_path + '.exe') or os.path.exists(
-                    path + program_path):
-                return True
-        return False
-
     def help(self):
         info = f"""欢迎使用 {self.name} {self.version}!
 echo: 输出字符到屏幕上 - echo <value>
@@ -355,21 +374,6 @@ ls: 列出目录下的文件和目录 - ls
 = dir
 help: 查看本消息 - help"""
         self.print(info)
-
-    def save_logging_settings(self):
-        user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".pcmd")
-        config_file = os.path.join(config_folder, "config.json")
-
-        config_data = {
-            "logging_enabled": self.logging_enabled,
-            "log_file_max_size": self.log_file_max_size,
-            "log_file_max_age": self.log_file_max_age,
-            "log_file_max_count": self.log_file_max_count
-        }
-
-        with open(config_file, "w") as f:
-            json.dump(config_data, f, indent=4)
 
     def cd(self, dir_name='.'):
         global path, entry
