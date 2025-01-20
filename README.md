@@ -13,7 +13,7 @@ A GUI terminal by Python3.
 <br />
 
 <p align="center">
-  <h3 align="center">最不像 Windows 11 终端的项目</h3>
+  <h3 align="center">比python-cmd更加好的项目</h3>
   <p align="center">
     您可以通过目录中的信息来使用它。
     <br />
@@ -27,9 +27,24 @@ A GUI terminal by Python3.
 
 ## 目录
 
+- [目录](#目录)
+- [与python-cmd的区别](#与python-cmd的区别)
+- [计划](#计划)
 - [上手指南](#上手指南)
 - [文件说明](#文件说明)
 - [作者](#作者)
+
+### 与[python-cmd](https://github.com/CodeCrafter-TL/python-cmd)的区别
+- 更快的更新速度
+- 更好的代码结构
+- 更好的代码注释
+
+### 计划
+- [ ] 增加更多的命令
+- [ ] 增加插件支持
+- [ ] 增加更多的功能
+- [ ] 更好的ui
+- [x] 添加日志
 
 ### 上手指南
 1. 在 GitHub 中下载最新的 [Release](https://github.com/oneachina/Huki/releases) 。
@@ -56,11 +71,19 @@ python main.py
 
 ```
 Huki-main
+├── Events
+│   ├── CustomPlainTextEdit.py
+│   └── Event.py
+├── Value
+│   ├── constants.py
+│   └── data.py
+|── utils
+│   ├── Logger_utils.py
+│   └── thread_utils.py
 ├── README.md
 ├── LICENSE.txt
 ├── ui.py
 ├── main.py
-├── constants.py
 ```
 > `README.md`: 您正在阅读的帮助文档
 
