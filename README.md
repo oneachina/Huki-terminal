@@ -43,15 +43,15 @@ git clone https://github.com/CodeCrafter-TL/python-cmd.git
 #### 安装必需包
 在 clone 之后的工作目录中执行如下命令:
 ```bash
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 如果安装较慢，可以使用如下命令切换为阿里云镜像:
 ```bash
-pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple
+pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
 ```
 等待安装完成后，使用如下命令即可开始使用 Python cmd:
 ```bash
-python3 main.py
+python main.py
 ```
 
 ### 文件说明
