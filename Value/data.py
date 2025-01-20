@@ -25,4 +25,4 @@ COMMANDS = {
         "ls": "ls",
         "dir": "ls",
         "help": "help",
-    }
+}

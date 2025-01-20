@@ -5,10 +5,10 @@ import subprocess
 import sys
 
 from PyQt5.QtWidgets import QMainWindow, QApplication
-
 from Events.Event import *
 from Value.constants import *
 from Value.data import *
+from plugin_loader import PluginLoader
 from ui import Ui_MainWindow
 from utils.Logger_utils import *
 from utils.thread_utils import *
@@ -24,6 +24,7 @@ CONFIG = {
 }
 color = CONFIG["color"][0]
 entry = f"{path}> "
+
 
 class MainForm(QMainWindow, Ui_MainWindow):
     name = CONFIG["name"][0]
@@ -59,9 +60,16 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
 
+        self.plugin_loader = PluginLoader(self)
+        self.plugin_loader.load_plugins()
+
     def closeEvent(self, event):
         LoggerUtils.save_log(self, "终端关闭")
         event.accept()
+
+    def register_command(self, cmd_name, cmd_func):
+        """注册新命令"""
+        COMMANDS[cmd_name] = cmd_func
 
     def process_command(self, line_text):
         try:
@@ -76,11 +84,17 @@ class MainForm(QMainWindow, Ui_MainWindow):
                     sys.exit()
                 else:
                     try:
-                        processed_args = []
-                        for arg in args:
-                            processed_args.append(f'"{str(arg)}"')
-                        eval(f"self.{method_name}({ \
-                            ', '.join(processed_args)})")
+                        # 如果是方法对象（插件命令），直接调用
+                        if callable(method_name):
+                            output = method_name(*args)
+                            if output:
+                                Event.print(self, output)
+                        # 如果是字符串（内置命令），使用反射调用
+                        else:
+                            processed_args = []
+                            for arg in args:
+                                processed_args.append(f'"{str(arg)}"')
+                            eval(f"self.{method_name}({', '.join(processed_args)})")
                     except NameError:
                         Event.error(self, [CMD_NOT_FOUND, COLON, command])
                     except TypeError as e:
@@ -141,6 +155,8 @@ rm: 删除文件 - rm <filename>
 ls: 列出目录下的文件和目录 - ls
 = dir
 help: 查看本消息 - help"""
+        # 添加插件帮助信息
+        info += self.plugin_loader.get_all_help()
         Event.print(self, info)
 
     def cd(self, dir_name='.'):
