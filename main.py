@@ -25,10 +25,6 @@ CONFIG = {
 color = CONFIG["color"][0]
 entry = f"{path}> "
 
-
-
-
-
 class MainForm(QMainWindow, Ui_MainWindow):
     name = CONFIG["name"][0]
     version = CONFIG["version"][0]
