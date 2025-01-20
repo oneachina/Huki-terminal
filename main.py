@@ -21,7 +21,7 @@ os.chdir(path)
 CONFIG = {
     "color": ["white", str],
     "name": ["Huki", str],
-    "version": [2.0, float],
+    "version": [1.0, float],
 }
 color = CONFIG["color"][0]
 entry = f"{path}> "
