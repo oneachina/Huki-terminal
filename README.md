@@ -25,6 +25,8 @@ A GUI terminal by Python3.
    <a href="https://github.com/oneachina/Huki/pulls">Submit Pull Request</a>
 </p>
 
+中文请去[README_ZH.md](https://github.com/oneachina/Huki/README_ZH.md)
+
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
