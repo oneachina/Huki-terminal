@@ -18,6 +18,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1535, 743)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
         self.frame = QtWidgets.QFrame(self.centralwidget)
         self.frame.setGeometry(QtCore.QRect(10, 10, 1521, 721))
         self.frame.setStyleSheet("QFrame#frame{background-color: rgb(12, 12, 12);\n"

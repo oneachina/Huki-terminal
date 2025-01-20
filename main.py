@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from typing import Any
 
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -13,10 +14,12 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 from Value.constants import *
+from Value.data import *
 from ui import Ui_MainWindow
 
+
 path = os.path.splitdrive(os.path.abspath(os.sep))[
-           0] + '\\' if os.name == 'nt' else os.path.abspath(os.sep)
+               0] + '\\' if os.name == 'nt' else os.path.abspath(os.sep)
 os.chdir(path)
 CONFIG = {
     "color": ["white", str],
@@ -69,16 +72,35 @@ class CustomPlainTextEdit(QtWidgets.QPlainTextEdit):
             self.parent().parent().parent().error(str(e) + "\n")
 
 
-def in_path(program_name):
-    path = os.environ.get('PATH')
-    directories = path.split(os.pathsep)
+def save_logging_settings():
+    user_folder = os.path.expanduser("~")
+    config_folder = os.path.join(user_folder, ".huki")
+    config_file = os.path.join(config_folder, "config.json")
 
-    for directory in directories:
-        program_path = os.path.join(directory, program_name)
-        if os.path.isfile(program_path) or os.path.isfile(program_path + '.exe') or os.path.exists(
-                path + program_path):
-            return True
-    return False
+    config_data = {
+        "logging_enabled": Config.logging_enabled,
+        "log_file_max_size": Config.log_file_max_size,
+        "log_file_max_age": Config.log_file_max_age,
+        "log_file_max_count": Config.log_file_max_count
+    }
+
+    with open(config_file, "w") as f:
+        json.dump(config_data, f, indent=4)
+
+
+def load_logging_settings():
+    user_folder = os.path.expanduser("~")
+    config_folder = os.path.join(user_folder, ".huki")
+    config_file = os.path.join(config_folder, "config.json")
+
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
+            config_data = json.load(f)
+
+        Config.logging_enabled = config_data.get("logging_enabled", True)
+        Config.log_file_max_size = config_data.get("log_file_max_size", 10240)
+        Config.log_file_max_age = config_data.get("log_file_max_age", 30)
+        Config.log_file_max_count = config_data.get("log_file_max_count", 10)
 
 
 def create_config_file():
@@ -106,12 +128,19 @@ def create_config_file():
         json.dump(config_data, f, indent=4)
 
 
+def in_path(program_name):
+    path = os.environ.get('PATH')
+    directories = path.split(os.pathsep)
+
+    for directory in directories:
+        program_path = os.path.join(directory, program_name)
+        if os.path.isfile(program_path) or os.path.isfile(program_path + '.exe') or os.path.exists(
+                path + program_path):
+            return True
+    return False
+
+
 class MainForm(QMainWindow, Ui_MainWindow):
-    # 日志记录设置
-    logging_enabled = True  # 默认开启日志记录
-    log_file_max_size = 10240  # 默认日志文件最大大小为10KB
-    log_file_max_age = 30  # 默认日志文件保留时间为30天
-    log_file_max_count = 10  # 默认日志文件保留数量为1
     name = CONFIG["name"][0]
     version = CONFIG["version"][0]
     welcome = f"{name} {version}\n{ \
@@ -172,43 +201,14 @@ class MainForm(QMainWindow, Ui_MainWindow):
             # 如果 config.json 不存在，创建一个默认的配置文件
             create_config_file()
 
-        self.load_logging_settings()
+        load_logging_settings()
 
         # 设置日志文件路径为 config.json 所在的文件夹
-        timestamp = time.strftime("%Y_%m_%d")
+        timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
         self.log_file_path = os.path.join(config_folder, f"huki_log_{timestamp}.txt")
 
-    def save_logging_settings(self):
-        user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".huki")
-        config_file = os.path.join(config_folder, "config.json")
-
-        config_data = {
-            "logging_enabled": self.logging_enabled,
-            "log_file_max_size": self.log_file_max_size,
-            "log_file_max_age": self.log_file_max_age,
-            "log_file_max_count": self.log_file_max_count
-        }
-
-        with open(config_file, "w") as f:
-            json.dump(config_data, f, indent=4)
-
-    def load_logging_settings(self):
-        user_folder = os.path.expanduser("~")
-        config_folder = os.path.join(user_folder, ".huki")
-        config_file = os.path.join(config_folder, "config.json")
-
-        if os.path.exists(config_file):
-            with open(config_file, "r") as f:
-                config_data = json.load(f)
-
-            self.logging_enabled = config_data.get("logging_enabled", True)
-            self.log_file_max_size = config_data.get("log_file_max_size", 10240)
-            self.log_file_max_age = config_data.get("log_file_max_age", 30)
-            self.log_file_max_count = config_data.get("log_file_max_count", 10)
-
     def save_log(self, message):
-        if not self.logging_enabled:
+        if not Config.logging_enabled:
             return
 
         if not self.log_file_path:
@@ -224,14 +224,14 @@ class MainForm(QMainWindow, Ui_MainWindow):
         if not self.log_file_path:
             return
 
-        if os.path.getsize(self.log_file_path) > self.log_file_max_size:
+        if os.path.getsize(self.log_file_path) > Config.log_file_max_size:
             self.archive_log()
 
         log_folder = os.path.dirname(self.log_file_path)
         log_files = [f for f in os.listdir(log_folder) if f.startswith("pcmd_log")]
         log_files.sort(key=lambda x: os.path.getmtime(os.path.join(log_folder, x)))
 
-        while len(log_files) > self.log_file_max_count:
+        while len(log_files) > Config.log_file_max_count:
             os.remove(os.path.join(log_folder, log_files.pop(0)))
 
     def archive_log(self):
