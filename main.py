@@ -6,13 +6,13 @@ import sys
 
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-from Events.CustomPlainTextEdit import *
 from Events.Event import *
 from Value.constants import *
 from Value.data import *
 from ui import Ui_MainWindow
 from utils.Logger_utils import *
 from utils.thread_utils import *
+from utils.Utils import *
 
 path = os.path.splitdrive(os.path.abspath(os.sep))[
            0] + '\\' if os.name == 'nt' else os.path.abspath(os.sep)
@@ -26,16 +26,7 @@ color = CONFIG["color"][0]
 entry = f"{path}> "
 
 
-def in_path(program_name):
-    path = os.environ.get('PATH')
-    directories = path.split(os.pathsep)
 
-    for directory in directories:
-        program_path = os.path.join(directory, program_name)
-        if os.path.isfile(program_path) or os.path.isfile(program_path + '.exe') or os.path.exists(
-                path + program_path):
-            return True
-    return False
 
 
 class MainForm(QMainWindow, Ui_MainWindow):
@@ -43,21 +34,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
     version = CONFIG["version"][0]
     welcome = f"{name} {version}\n{ \
         LICENSE}\nType 'help' to view help information.\n"
-
-    COMMANDS = {
-        "exit": "exit",
-        "echo": "echo",
-        "cd": "cd",
-        "chdir": "cd",
-        "mkdir": "mkdir",
-        "md": "mkdir",
-        "rm": "remove",
-        "remove": "remove",
-        "del": "remove",
-        "ls": "ls",
-        "dir": "ls",
-        "help": "help",
-    }
 
     def __init__(self, parent=None):
         super(MainForm, self).__init__(parent)
@@ -116,7 +92,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
                             Event.error(self, [command, COLON, LARGE_ARG])
                         elif re.search(r'missing \d+ required positional argument', str(e)):
                             Event.error(self, [command, COLON, MISS_ARG])
-            elif in_path(command):
+            elif in_path(path, command) or os.path.isfile(os.path.join(path, command)):
                 if os.name == 'nt':
                     executable = 'cmd'
                 else:
