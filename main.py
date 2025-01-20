@@ -72,7 +72,6 @@ class CustomPlainTextEdit(QtWidgets.QPlainTextEdit):
 class MainForm(QMainWindow, Ui_MainWindow):
     # 日志记录设置
     logging_enabled = True  # 默认开启日志记录
-    log_file_path = None
     log_file_max_size = 10240  # 默认日志文件最大大小为10KB
     log_file_max_age = 30  # 默认日志文件保留时间为30天
     log_file_max_count = 10  # 默认日志文件保留数量为1
@@ -98,10 +97,12 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
     def __init__(self, parent=None):
         super(MainForm, self).__init__(parent)
+        self.log_file_path = None
         self.args = None
         self.setupUi(self)
         self.create_config_file()
         self.init_logging()
+        self.save_log("Huki start")
         self.start_x = None
         self.start_y = None
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
@@ -121,7 +122,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.print(entry, end="")
 
         self.text_edit.selectionChanged.connect(self.on_selection_changed)
-        self.save_log("Huki start")
 
     def create_config_file(self):
         user_folder = os.path.expanduser("~")
@@ -160,6 +160,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
             self.create_config_file()
 
         self.load_logging_settings()
+
+        # 设置日志文件路径为 config.json 所在的文件夹
+        self.log_file_path = os.path.join(config_folder, "huki.log")
 
     def load_logging_settings(self):
         user_folder = os.path.expanduser("~")
@@ -226,6 +229,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
             if command in self.COMMANDS:
                 method_name = self.COMMANDS[command]
+                self.save_log(f"Command: {line_text}")
                 if method_name == "exit":
                     sys.exit()
                 else:
@@ -426,6 +430,7 @@ help: 查看本消息 - help"""
             self.text_edit.setReadOnly(True)
         else:
             self.text_edit.setReadOnly(False)
+
 
 class thread(QThread):
     trigger = pyqtSignal(str)
