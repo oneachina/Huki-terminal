@@ -107,7 +107,6 @@ Huki-main
 
 该项目签署了MIT 授权许可，详情请参阅 [LICENSE.txt](https://github.com/oneachina/Huki/LICENSE.txt)
 
-[project-path]:oneachina/Huki
 [contributors-shield]: https://img.shields.io/github/contributors/oneachina/Huki.svg?style=square
 [contributors-url]: https://github.com/oneachina/Huki/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/oneachina/Huki.svg?style=square
