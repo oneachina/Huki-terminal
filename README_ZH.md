@@ -1,6 +1,9 @@
 <!-- Best_README_template -->
 
 # Huki cmd
+<div align="center">
+  <img src="logo.png" alt="Logo" width="120" height="120">
+</div>
 
 A GUI terminal by Python3.
 
