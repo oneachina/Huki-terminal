@@ -1,5 +1,5 @@
 VERSION = "1.0"
-NAME = "Huki"
+NAME = "Huki terminal"
 LICENSE = "MIT License 2024 oneachina"
 COLON = ": "
 CMD_NOT_DEFINED = "未知命令"

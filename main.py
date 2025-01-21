@@ -19,7 +19,7 @@ path = os.path.splitdrive(os.path.abspath(os.sep))[
 os.chdir(path)
 CONFIG = {
     "color": ["white", str],
-    "name": ["Huki", str],
+    "name": ["Huki terminal", str],
     "version": [1.0, float],
 }
 color = CONFIG["color"][0]
@@ -84,12 +84,10 @@ class MainForm(QMainWindow, Ui_MainWindow):
                     sys.exit()
                 else:
                     try:
-                        # 如果是方法对象（插件命令），直接调用
                         if callable(method_name):
                             output = method_name(*args)
                             if output:
                                 Event.print(self, output)
-                        # 如果是字符串（内置命令），使用反射调用
                         else:
                             processed_args = []
                             for arg in args:
