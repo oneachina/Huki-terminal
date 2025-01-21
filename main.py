@@ -42,7 +42,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
         LoggerUtils.save_log(self, "Huki start")
         self.start_x = None
         self.start_y = None
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.thread = ThreadUtils()
 
@@ -72,86 +72,64 @@ class MainForm(QMainWindow, Ui_MainWindow):
         COMMANDS[cmd_name] = cmd_func
 
     def process_command(self, line_text):
-        global res
-        if '>' in line_text:
-            line_text = line_text.split('>')[-1].strip()
-        try:
-            result: list | tuple = line_text.split(' ')
-            command: str = result[0]
-            args: list | tuple = result[1:]
-            LoggerUtils.save_log(self, f"Command: {line_text}")
-            if command in COMMANDS:
-                method_name = COMMANDS[command]
+        if not line_text.strip():  # 处理空命令
+            Event.print(self, entry, end="")
+            return
 
-                if method_name == "exit":
-                    sys.exit()
-                else:
-                    try:
-                        if callable(method_name):
-                            output = method_name(*args)
-                            if output:
-                                Event.print(self, output)
-                        else:
-                            processed_args = []
-                            for arg in args:
-                                processed_args.append(f'"{str(arg)}"')
-                            eval(f"self.{method_name}({', '.join(processed_args)})")
-                    except NameError:
-                        Event.error(self, [CMD_NOT_FOUND, COLON, command])
-                    except TypeError as e:
-                        if re.search(r'takes \d+ positional argument', str(e)):
-                            Event.error(self, [command, COLON, LARGE_ARG])
-                        elif re.search(r'missing \d+ required positional argument', str(e)):
-                            Event.error(self, [command, COLON, MISS_ARG])
-            elif in_path(path, command) or os.path.isfile(os.path.join(path, command)):
-                if os.name == 'nt':
-                    res = subprocess.run(
-                        line_text,  # 使用原始的命令文本
-                        shell=True,
-                        text=True,
-                        capture_output=True,
-                        cwd=path,  # 使用 cwd 参数设置工作目录
-                    )
-                else:
-                    executable = '/bin/bash'
-                    res = subprocess.run(
-                        command,
-                        shell=True,
-                        text=True,
-                        capture_output=True,
-                        executable=executable,
-                    )
-                if res.stdout:
-                    Event.print(self, [res.stdout.strip()])
-                elif res.stderr:
-                    self.error_tuple(res.stderr.strip())
+        command, *args = line_text.split('>')[-1].strip().split()
+
+        LoggerUtils.save_log(self, f"Command: {line_text}")
+
+        try:
+            if command in COMMANDS:
+                self._execute_command(command, args)
+            elif self._is_system_command(command):
+                self._execute_system_command(line_text)
             else:
                 LoggerUtils.save_log(self, f"Command not found: {command}")
                 Event.error(self, [CMD_NOT_DEFINED, COLON, command])
         except (KeyboardInterrupt, EOFError):
             Event.error(self, ["\n", USET_ABORT])
-            exit()
+            sys.exit()
+        finally:
+            Event.print(self, entry, end="")
 
-        Event.print(self, entry, end="")
+    def _execute_command(self, command, args):
+        method_name = COMMANDS[command]
+        if method_name == "exit":
+            sys.exit()
+
+        try:
+            if callable(method_name):
+                output = method_name(*args)
+                if output:
+                    Event.print(self, output)
+            else:
+                processed_args = [f'"{str(arg)}"' for arg in args]
+                eval(f"self.{method_name}({', '.join(processed_args)})")
+        except NameError:
+            Event.error(self, [CMD_NOT_FOUND, COLON, command])
+        except TypeError as e:
+            self._handle_type_error(command, e)
+
+    def _is_system_command(self, command):
+        return in_path(path, command) or os.path.isfile(os.path.join(path, command))
 
     def mouseReleaseEvent(self, event):
         self.start_x = None
         self.start_y = None
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             super(MainForm, self).mousePressEvent(event)
             self.start_x = event.x()
             self.start_y = event.y()
 
     def mouseMoveEvent(self, event):
-        try:
-            super(MainForm, self).mouseMoveEvent(event)
-            dis_x = event.x() - self.start_x
-            dis_y = event.y() - self.start_y
-            self.move(self.x() + dis_x, self.y() + dis_y)
-        except:
-            pass
+        super(MainForm, self).mouseMoveEvent(event)
+        dis_x = event.x() - self.start_x
+        dis_y = event.y() - self.start_y
+        self.move(self.x() + dis_x, self.y() + dis_y)
 
     def help(self):
         info = f"""欢迎使用 {self.name} {self.version}!
@@ -171,30 +149,40 @@ help: 查看本消息 - help"""
         info += self.plugin_loader.get_all_help()
         Event.print(self, info)
 
-    def cd(self, dir_name='.'):
+    def cd(self, dir_name: str = '.') -> None:
         global path, entry
         try:
-            if dir_name == '..':
-                # 修改这里，直接获取父目录
-                new_path = os.path.dirname(path)
-                os.chdir(new_path)
-                path = new_path
-                entry = path + "> "
-            elif dir_name == '.':
+            if dir_name == '.':
                 Event.print(self, path)
-            else:
-                new_path = os.path.join(path, dir_name)
+                return
+            if os.name == 'nt' and re.match(r'^[A-Za-z]:$', dir_name):
+                new_path = f"{dir_name}\\"
+                if not os.path.exists(new_path):
+                    Event.error(self, DIR_NOT_FOUND)
+                    return
                 os.chdir(new_path)
                 path = new_path
-                entry = path + "> "
-        except Exception as e:
-            if e.errno:
-                if e.errno == 30:
-                    Event.error(self, READONLY_FILE)
-                elif e.errno == 2:
-                    Event.error(self, DIR_NOT_FOUND)
+                entry = f"{path}> "
+                return
+
+            # 处理普通目录切换
+            if dir_name == '..':
+                new_path = os.path.dirname(path)
             else:
-                Event.error(self, e)
+                new_path = os.path.abspath(os.path.join(path, dir_name))
+
+            if not os.path.exists(new_path):
+                Event.error(self, DIR_NOT_FOUND)
+                return
+
+            os.chdir(new_path)
+            path = new_path
+            entry = f"{path}> "
+
+        except PermissionError:
+            Event.error(self, READONLY_FILE)
+        except Exception as e:
+            Event.error(self, str(e))
 
     def mkdir(self, dir_name):
         try:
@@ -211,17 +199,20 @@ help: 查看本消息 - help"""
 
     def remove(self, filename):
         try:
-            os.remove(filename) if os.path.isfile(
-                filename) else os.rmdir(filename)
-        except Exception as e:
-            if e.errno:
-                if e.errno == 30:
-                    Event.error(self, READONLY_FILE)
-                elif e.errno == 2:
-                    Event.error(self, FILE_NOT_FOUND)
-            else:
-                Event.error(self, e)
+            filepath = os.path.join(path, filename)
+            if not os.path.exists(filepath):
+                raise FileNotFoundError
 
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+            else:
+                os.rmdir(filepath)
+        except FileNotFoundError:
+            Event.error(self, FILE_NOT_FOUND)
+        except PermissionError:
+            Event.error(self, READONLY_FILE)
+        except Exception as e:
+            Event.error(self, str(e))
     def ls(self):
         Event.print(self, os.listdir(path), sep=" ")
 
