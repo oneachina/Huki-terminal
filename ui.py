@@ -138,7 +138,7 @@ class Ui_MainWindow(object):
         # 获取当前文件的绝对路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         # 构建图片的完整路径
-        icon_path = os.path.join(current_dir, "icons/s.png")
+        icon_path = os.path.join(current_dir, "icons/setting.png")
         self.settingsButton.setIcon(QIcon(icon_path))
         self.settingsButton.setIconSize(QtCore.QSize(50, 50))
 
