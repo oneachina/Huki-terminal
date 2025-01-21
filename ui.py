@@ -10,6 +10,7 @@
 import os
 
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QIcon
 
 os.environ["QT_SCALE_FACTOR"] = "1"
 
@@ -17,8 +18,12 @@ os.environ["QT_SCALE_FACTOR"] = "1"
 class Ui_MainWindow(object):
 
     def __init__(self):
+        self.togglePages = None
         self.centralwidget = None
         self.frame = None
+        self.current_page = "terminal"  # 添加页面状态跟踪
+        self.settingsButton = None  # 添加这行
+        self.settingsPage = None  # 添加这行
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -77,7 +82,31 @@ class Ui_MainWindow(object):
                                         "")
         self.pushButton_5.setObjectName("pushButton_5")
 
-     # 初始提示符
+        # 添加设置按钮的创建和绑定
+        self.settingsButton = QtWidgets.QPushButton(self.widget)
+        self.settingsButton.setGeometry(QtCore.QRect(1420, 0, 51, 51))
+        self.settingsButton.setStyleSheet("""
+                    QPushButton {
+                        color: rgb(255, 255, 255);
+                        font: 11pt "Segoe UI";
+                        border: none;
+                    }
+                    QPushButton:hover {
+                        background-color: rgb(116, 116, 116);
+                    }
+                """)
+        self.settingsButton.setObjectName("settingsButton")
+
+        # 添加设置页面的创建
+        self.settingsPage = QtWidgets.QWidget(self.frame)
+        self.settingsPage.setGeometry(QtCore.QRect(0, 51, 1521, 670))
+        self.settingsPage.setStyleSheet("background-color: rgb(12, 12, 12);")
+        self.settingsPage.hide()
+
+        # 信号连接方式
+        self.settingsButton.clicked.connect(lambda: self.togglePages(MainWindow))
+
+        # 初始提示符
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -88,12 +117,29 @@ class Ui_MainWindow(object):
 
         MainWindow.setCentralWidget(self.centralwidget)
 
+    def togglePages(self, MainWindow):
+        """切换终端和设置页面"""
+        if self.current_page == "terminal":
+            self.settingsPage.show()
+            self.current_page = "settings"
+            self.label.setText("设置")
+        else:
+            self.settingsPage.hide()
+            self.current_page = "terminal"
+            self.label.setText("命令提示符")
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "命令提示符"))
         self.pushButton_4.setText(_translate("MainWindow", "×"))
         self.pushButton.setText(_translate("MainWindow", "×"))
-        # self.pushButton_2.setText(_translate("MainWindow", "▢"))
-        # self.pushButton_3.setText(_translate("MainWindow", "-"))
+
+        # 获取当前文件的绝对路径
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # 构建图片的完整路径
+        icon_path = os.path.join(current_dir, "icons/s.png")
+        self.settingsButton.setIcon(QIcon(icon_path))
+        self.settingsButton.setIconSize(QtCore.QSize(50, 50))
+
         self.pushButton_5.setText(_translate("MainWindow", "+"))
