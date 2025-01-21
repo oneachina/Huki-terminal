@@ -16,7 +16,7 @@ A GUI terminal by Python3.
 <br />
 
 <p align="center">
-  <h3 align="center">比python-cmd更加好的项目</h3>
+  <h3 align="center">最不像win11终端的terminal</h3>
   <p align="center">
     您可以通过目录中的信息来使用它。
     <br />

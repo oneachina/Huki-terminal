@@ -16,7 +16,7 @@ A GUI terminal by Python3.
 <br />
 
 <p align="center">
- <h3 align="center">A Better Project Than python-cmd</h3>
+ <h3 align="center">A project to create the most un-Win11 terminal</h3>
  <p align="center">
    You can use it by following the information in the directory.
    <br />
