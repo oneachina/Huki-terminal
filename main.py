@@ -72,6 +72,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
         COMMANDS[cmd_name] = cmd_func
 
     def process_command(self, line_text):
+        global res
+        if '>' in line_text:
+            line_text = line_text.split('>')[-1].strip()
         try:
             result: list | tuple = line_text.split(' ')
             command: str = result[0]
@@ -102,11 +105,22 @@ class MainForm(QMainWindow, Ui_MainWindow):
                             Event.error(self, [command, COLON, MISS_ARG])
             elif in_path(path, command) or os.path.isfile(os.path.join(path, command)):
                 if os.name == 'nt':
-                    executable = 'cmd'
+                    res = subprocess.run(
+                        line_text,  # 使用原始的命令文本
+                        shell=True,
+                        text=True,
+                        capture_output=True,
+                        cwd=path,  # 使用 cwd 参数设置工作目录
+                    )
                 else:
                     executable = '/bin/bash'
-                res = subprocess.run(
-                    command, shell=True, text=True, capture_output=True, executable=executable)
+                    res = subprocess.run(
+                        command,
+                        shell=True,
+                        text=True,
+                        capture_output=True,
+                        executable=executable,
+                    )
                 if res.stdout:
                     Event.print(self, [res.stdout.strip()])
                 elif res.stderr:
@@ -161,7 +175,8 @@ help: 查看本消息 - help"""
         global path, entry
         try:
             if dir_name == '..':
-                new_path = os.path.dirname(path + dir_name)
+                # 修改这里，直接获取父目录
+                new_path = os.path.dirname(path)
                 os.chdir(new_path)
                 path = new_path
                 entry = path + "> "
