@@ -11,7 +11,7 @@ import os
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QIcon
-
+from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QDialog
 os.environ["QT_SCALE_FACTOR"] = "1"
 
 
@@ -24,6 +24,31 @@ class Ui_MainWindow(object):
         self.current_page = "terminal"  # 添加页面状态跟踪
         self.settingsButton = None  # 添加这行
         self.settingsPage = None  # 添加这行
+
+    def open_settings(self):
+        print("开始打开设置...")
+        try:
+            settings_dialog = QDialog(self)
+            print("设置对话框创建成功")
+            settings_dialog.setWindowTitle("设置")
+            settings_dialog.setModal(True)  # 设置为模态对话框
+
+            # 创建布局
+            layout = QVBoxLayout()
+            settings_dialog.setLayout(layout)
+
+            # 添加一些设置选项（根据需要修改）
+            # 例如：添加一个按钮
+            close_button = QPushButton("关闭")
+            close_button.clicked.connect(settings_dialog.close)
+            layout.addWidget(close_button)
+
+            # 显示对话框
+            settings_dialog.exec_()
+        except Exception as e:
+            print(f"错误详情: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -104,7 +129,7 @@ class Ui_MainWindow(object):
         self.settingsPage.hide()
 
         # 信号连接方式
-        self.settingsButton.clicked.connect(lambda: self.togglePages(MainWindow))
+        self.settingsButton.clicked.connect(self.open_settings)
 
         # 初始提示符
 
@@ -129,17 +154,24 @@ class Ui_MainWindow(object):
             self.label.setText("命令提示符")
 
     def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.label.setText(_translate("MainWindow", "命令提示符"))
-        self.pushButton_4.setText(_translate("MainWindow", "×"))
-        self.pushButton.setText(_translate("MainWindow", "×"))
-
         # 获取当前文件的绝对路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         # 构建图片的完整路径
         icon_path = os.path.join(current_dir, "icons/setting.png")
-        self.settingsButton.setIcon(QIcon(icon_path))
-        self.settingsButton.setIconSize(QtCore.QSize(50, 50))
+        add_icon_path = os.path.join(current_dir, "icons/add.png")
+        dismiss_icon_path = os.path.join(current_dir, "icons/dismiss.png")
 
-        self.pushButton_5.setText(_translate("MainWindow", "+"))
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.label.setText(_translate("MainWindow", "命令提示符"))
+        self.pushButton_4.setIcon(QIcon(dismiss_icon_path))
+        self.pushButton_4.setIconSize(QtCore.QSize(20, 20))
+
+        self.pushButton.setIcon(QIcon(dismiss_icon_path))
+        self.pushButton.setIconSize(QtCore.QSize(20, 20))
+
+        self.settingsButton.setIcon(QIcon(icon_path))
+        self.settingsButton.setIconSize(QtCore.QSize(40, 40))
+
+        self.pushButton_5.setIcon(QIcon(add_icon_path))
+        self.pushButton_5.setIconSize(QtCore.QSize(20, 20))
