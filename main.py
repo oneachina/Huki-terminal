@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
 
 from PyQt5.QtWidgets import QMainWindow, QApplication
+
 from Events.Event import *
 from Value.constants import *
 from Value.data import *
 from plugin_loader import PluginLoader
 from ui import Ui_MainWindow
 from utils.Logger_utils import *
-from utils.thread_utils import *
 from utils.Utils import *
+from utils.thread_utils import *
 
 path = os.path.splitdrive(os.path.abspath(os.sep))[
            0] + '\\' if os.name == 'nt' else os.path.abspath(os.sep)
@@ -24,6 +24,10 @@ CONFIG = {
 }
 color = CONFIG["color"][0]
 entry = f"{path}> "
+
+
+def _is_system_command(command):
+    return in_path(path, command) or os.path.isfile(os.path.join(path, command))
 
 
 class MainForm(QMainWindow, Ui_MainWindow):
@@ -83,7 +87,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
         try:
             if command in COMMANDS:
                 self._execute_command(command, args)
-            elif self._is_system_command(command):
+            elif _is_system_command(command):
                 self._execute_system_command(line_text)
             else:
                 LoggerUtils.save_log(self, f"Command not found: {command}")
@@ -112,9 +116,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         except TypeError as e:
             self._handle_type_error(command, e)
 
-    def _is_system_command(self, command):
-        return in_path(path, command) or os.path.isfile(os.path.join(path, command))
-
     def mouseReleaseEvent(self, event):
         self.start_x = None
         self.start_y = None
@@ -135,9 +136,9 @@ class MainForm(QMainWindow, Ui_MainWindow):
         info = f"""欢迎使用 {self.name} {self.version}!
 echo: 输出字符到屏幕上 - echo <value>
 exit: 退出 {self.name} - exit
-cd: 进入目录 - cd <dirname |.. |.>
+cd: 进入目录 - cd <dir name |.. |.>
 = chdir
- mkdir: 创建文件夹 - mkdir <dirname>
+ mkdir: 创建文件夹 - mkdir <dir name>
 = md
 rm: 删除文件 - rm <filename>
 = remove
@@ -186,13 +187,25 @@ help: 查看本消息 - help"""
 
     def mkdir(self, dir_name):
         try:
-            os.mkdir(os.path.join(path, dir_name))
-        except Exception as e:
-            if e.errno:
-                if e.errno == 30:
-                    Event.error(self, READONLY_FILE)
+            full_path = os.path.join(path, dir_name)
+            # 检查目录是否已存在
+            if os.path.exists(full_path):
+                Event.error(self, "目录已存在")
+                return
+            os.mkdir(full_path)
+        except PermissionError:
+            Event.error(self, READONLY_FILE)
+        except OSError as e:
+            if e.errno == 30:  # Read-only file system
+                Event.error(self, READONLY_FILE)
+            elif e.errno == 2:  # No such file or directory
+                Event.error(self, "路径无效")
+            elif e.errno == 13:  # Permission denied
+                Event.error(self, READONLY_FILE)
             else:
-                Event.error(self, e)
+                Event.error(self, f"创建目录失败: {str(e)}")
+        except Exception as e:
+            Event.error(self, str(e))
 
     def echo(self, *string):
         Event.print(self, string, sep=" ")
@@ -213,6 +226,7 @@ help: 查看本消息 - help"""
             Event.error(self, READONLY_FILE)
         except Exception as e:
             Event.error(self, str(e))
+
     def ls(self):
         Event.print(self, os.listdir(path), sep=" ")
 
