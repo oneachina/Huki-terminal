@@ -16,6 +16,10 @@ os.environ["QT_SCALE_FACTOR"] = "1"
 
 class Ui_MainWindow(object):
 
+    def __init__(self):
+        self.centralwidget = None
+        self.frame = None
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1535, 743)
