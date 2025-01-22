@@ -8,6 +8,7 @@ from ui import Ui_MainWindow
 
 class Event(Ui_MainWindow):
     def __init__(self):
+        super().__init__()
         self.text_edit = CustomPlainTextEdit(self.frame)
 
         self.text_edit.setGeometry(QtCore.QRect(0, 50, 1521, 671))

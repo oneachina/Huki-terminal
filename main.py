@@ -3,8 +3,10 @@ from __future__ import annotations
 import re
 import sys
 
+from PyQt5.QtCore import QLocale
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
+from i18n import i18n
 from Events.Event import *
 from Value.constants import *
 from Value.data import *
@@ -41,9 +43,12 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.log_file_path = None
         self.args = None
         self.setupUi(self)
+
         create_config_file()
         LoggerUtils.init_logging(self)
         LoggerUtils.save_log(self, "Huki start")
+        self.setup_language()
+
         self.start_x = None
         self.start_y = None
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -66,6 +71,14 @@ class MainForm(QMainWindow, Ui_MainWindow):
 
         self.plugin_loader = PluginLoader(self)
         self.plugin_loader.load_plugins()
+
+    def setup_language(self):
+        # 根据系统语言或用户设置选择语言
+        system_language = QLocale.system().name()
+        if system_language.startswith('zh'):
+            i18n.i18n.load_language('zh')
+        else:
+            i18n.i18n.load_language('en')
 
     def closeEvent(self, event):
         LoggerUtils.save_log(self, "终端关闭")
@@ -133,19 +146,23 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.move(self.x() + dis_x, self.y() + dis_y)
 
     def help(self):
-        info = f"""欢迎使用 {self.name} {self.version}!
-echo: 输出字符到屏幕上 - echo <value>
-exit: 退出 {self.name} - exit
-cd: 进入目录 - cd <dir name |.. |.>
-= chdir
- mkdir: 创建文件夹 - mkdir <dir name>
-= md
-rm: 删除文件 - rm <filename>
-= remove
-= del
-ls: 列出目录下的文件和目录 - ls
-= dir
-help: 查看本消息 - help"""
+        info = QCoreApplication.translate("MainWindow", """Welcome to {name} {version}!
+Commands:
+    echo     Output text to screen - echo <value>
+    exit     Exit {name} - exit
+    cd       Change directory - cd <dir name |.. |.>
+            (alias: chdir)
+    mkdir    Create directory - mkdir <dir name>
+            (alias: md)
+    rm       Remove file - rm <filename>
+            (alias: remove, del)
+    ls       List directory contents - ls
+            (alias: dir)
+    help     View this message - help""").format(
+            name=self.name,
+            version=self.version
+        )
+
         # 添加插件帮助信息
         info += self.plugin_loader.get_all_help()
         Event.print(self, info)

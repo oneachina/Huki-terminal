@@ -4,11 +4,12 @@ class Showplugins:
 
     def get_commands(self):
         return {
-            "plugins": "cmd_plugins"
+            "plugins": "cmd_plugins",
+            "pl": "cmd_plugins"
         }
 
     def get_help(self):
-        return "plugins: 显示所有已加载的插件"
+        return "plugins/pl: 显示所有已加载的插件"
 
     def cmd_plugins(self, *args):
         plugins = self.plugin_loader.get_loaded_plugins()

@@ -22,6 +22,15 @@ class CustomPlainTextEdit(QtWidgets.QPlainTextEdit):
                 self.clear()
                 self.appendPlainText(all_text[:-1])
 
+            # 处理方向键
+            elif event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                if cursor_pos <= self.welcome_length:
+                    event.ignore()
+                    return
+                if event.key() in (Qt.Key_Up, Qt.Key_Down):
+                    event.ignore()
+                    return
+
             elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
                 cursor.movePosition(QtGui.QTextCursor.StartOfLine)
                 cursor.select(QtGui.QTextCursor.LineUnderCursor)
