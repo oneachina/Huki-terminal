@@ -53,6 +53,12 @@ pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple
 python3 main.py
 ```
 
+#### 日志说明
+日志存放位于`C:\users\你的用户名\.pcmd`下
+##### Warning!
+- 无法自定义位置
+
+
 ### 文件说明
 
 ```
