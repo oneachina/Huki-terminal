@@ -56,6 +56,7 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.thread = ThreadUtils()
 
         self.text_edit = CustomPlainTextEdit(self.frame)
+        #self.setCentralWidget(self.text_edit)
 
         self.text_edit.setGeometry(QtCore.QRect(0, 50, 1521, 671))
         self.text_edit.setStyleSheet("QPlainTextEdit#plainTextEdit"
@@ -89,12 +90,25 @@ class MainForm(QMainWindow, Ui_MainWindow):
         COMMANDS[cmd_name] = cmd_func
 
     def process_command(self, line_text):
-        if not line_text.strip():  # 处理空命令
+        if not line_text:  # 处理空命令
             Event.print(self, entry, end="")
             return
 
-        command, *args = line_text.split('>')[-1].strip().split()
+        # 分割命令，处理可能的 '>' 符号
+        parts = line_text.split('>')
+        command_part = parts[-1].strip()
 
+        if not command_part:
+            Event.print(self, entry, end="")
+            return
+
+        command_parts = command_part.split()
+        if not command_parts:
+            Event.print(self, entry, end="")
+            return
+
+        command = command_parts[0]
+        args = command_parts[1:]
         LoggerUtils.save_log(self, f"Command: {line_text}")
 
         try:
@@ -196,6 +210,7 @@ Commands:
             os.chdir(new_path)
             path = new_path
             entry = f"{path}> "
+            self.text_edit.set_current_path(path)
 
         except PermissionError:
             Event.error(self, READONLY_FILE)
