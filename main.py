@@ -117,9 +117,9 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
 
     def process_command(self, line_text):
         try:
-            result: list | tuple = line_text.split(' ')
-            command: str = result[0]
-            args: list | tuple = result[1:]
+            result = line_text.split(' ')
+            command = result[0]
+            args = result[1:]
 
             if command in self.COMMANDS:
                 method_name = self.COMMANDS[command]
@@ -127,18 +127,22 @@ class MyMainForm(QMainWindow, Ui_MainWindow):
                     sys.exit()
                 else:
                     try:
-                        processed_args = []
-                        for arg in args:
-                            processed_args.append(f'"{str(arg)}"')
-                        eval(f"self.{method_name}({ \
-                            ', '.join(processed_args)})")
-                    except NameError as e:
+                        method = getattr(self, method_name)
+                        # 直接传递参数列表，无需字符串处理
+                        method(*args)
+                    except AttributeError:
                         self.error([CMD_NOT_FOUND, COLON, command])
                     except TypeError as e:
-                        if re.search(r'takes \d+ positional argument', str(e)):
-                            self.error([command, COLON, LARGE_ARG])
-                        elif re.search(r'missing \d+ required positional argument', str(e)):
-                            self.error([command, COLON, MISS_ARG])
+                        error_msg = str(e)
+                        if "positional argument" in error_msg:
+                            if "missing" in error_msg:
+                                self.error([command, COLON, MISS_ARG])
+                            elif "takes" in error_msg:
+                                self.error([command, COLON, LARGE_ARG])
+                        else:
+                            self.error([str(e)])
+                    except Exception as e:
+                        self.error([str(e)])
             elif self.in_path(command):
                 if os.name == 'nt':
                     executable = 'cmd'
@@ -251,8 +255,7 @@ rm: 删除文件 - rm <filename>
 ls: 列出目录下的文件和目录 - ls
 = dir
 help: 查看本消息 - help
-日志保存位置在{self.home_directory}\.pcmd\下
-"""
+日志保存位置在{self.home_directory}""" + r"""\.pcmd\下"""
         self.print(info)
 
     def cd(self, dir_name='.'):
