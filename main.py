@@ -6,7 +6,6 @@ import sys
 from PyQt5.QtCore import QLocale
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-from i18n import i18n
 from Events.Event import *
 from Value.constants import *
 from Value.data import *
@@ -47,7 +46,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         create_config_file()
         LoggerUtils.init_logging(self)
         LoggerUtils.save_log(self, "Huki start")
-        self.setup_language()
 
         self.start_x = None
         self.start_y = None
@@ -56,7 +54,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.thread = ThreadUtils()
 
         self.text_edit = CustomPlainTextEdit(self.frame)
-        #self.setCentralWidget(self.text_edit)
 
         self.text_edit.setGeometry(QtCore.QRect(0, 50, 1521, 671))
         self.text_edit.setStyleSheet("QPlainTextEdit#plainTextEdit"
@@ -73,14 +70,6 @@ class MainForm(QMainWindow, Ui_MainWindow):
         self.plugin_loader = PluginLoader(self)
         self.plugin_loader.load_plugins()
 
-    def setup_language(self):
-        # 根据系统语言或用户设置选择语言
-        system_language = QLocale.system().name()
-        if system_language.startswith('zh'):
-            i18n.i18n.load_language('zh')
-        else:
-            i18n.i18n.load_language('en')
-
     def closeEvent(self, event):
         LoggerUtils.save_log(self, "终端关闭")
         event.accept()
@@ -90,11 +79,10 @@ class MainForm(QMainWindow, Ui_MainWindow):
         COMMANDS[cmd_name] = cmd_func
 
     def process_command(self, line_text):
-        if not line_text:  # 处理空命令
+        if not line_text:
             Event.print(self, entry, end="")
             return
 
-        # 分割命令，处理可能的 '>' 符号
         parts = line_text.split('>')
         command_part = parts[-1].strip()
 
@@ -136,12 +124,26 @@ class MainForm(QMainWindow, Ui_MainWindow):
                 if output:
                     Event.print(self, output)
             else:
-                processed_args = [f'"{str(arg)}"' for arg in args]
-                eval(f"self.{method_name}({', '.join(processed_args)})")
+                method = getattr(self, method_name)
+                output = method(*args)
+                if output:
+                    Event.print(self, output)
         except NameError:
             Event.error(self, [CMD_NOT_FOUND, COLON, command])
+        except AttributeError:
+            Event.error(self, [CMD_NOT_FOUND, COLON, command])
         except TypeError as e:
-            self._handle_type_error(command, e)
+            error_msg = str(e)
+            if "positional argument" in error_msg:
+                if "missing" in error_msg:
+                    Event.error(self, [command, COLON, MISS_ARG])
+                elif "takes" in error_msg:
+                    Event.error(self, [command, COLON, LARGE_ARG])
+            else:
+                Event.error(self, [command, COLON, error_msg])
+        except Exception as e:
+            LoggerUtils.save_log(self, f"Command execution error: {str(e)}")
+            Event.error(self, [str(e)])
 
     def mouseReleaseEvent(self, event):
         self.start_x = None
@@ -197,7 +199,6 @@ Commands:
                 entry = f"{path}> "
                 return
 
-            # 处理普通目录切换
             if dir_name == '..':
                 new_path = os.path.dirname(path)
             else:
@@ -210,7 +211,6 @@ Commands:
             os.chdir(new_path)
             path = new_path
             entry = f"{path}> "
-            self.text_edit.set_current_path(path)
 
         except PermissionError:
             Event.error(self, READONLY_FILE)
