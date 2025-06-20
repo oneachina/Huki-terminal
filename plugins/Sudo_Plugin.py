@@ -1,11 +1,9 @@
-import os
-import sys
 import ctypes
 import subprocess
-from typing import List, Dict
+from typing import Dict
 
 
-class Win11plugin:
+class Sudoplugin:
     def __init__(self, main_form=None):
         self.main_form = main_form
 
