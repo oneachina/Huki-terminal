@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller
         pip install -r requirements.txt
-        pyinstaller --onefile --windowed --icon=icons/logo.png --name "Huki-terminal" --add-data=icons/*:icons main.py;
+        pyinstaller --onefile --windowed --icon=icons/logo.ico --name "Huki-terminal" --add-data=icons/*:icons main.py;
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
