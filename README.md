@@ -1,8 +1,8 @@
-<!-- Best_README_template -->
-
-# Huki-terminal
+# 
 <div align="center">
-  <img src="icons/logo.png" alt="Logo" width="120" height="120">
+    <h1 align="center"> Huki-terminal </h1>   
+    <br>
+    <img src="icons/logo.png" alt="Logo" width="120" height="120">
 </div>
 
 A GUI terminal by Python3.
@@ -18,17 +18,17 @@ A GUI terminal by Python3.
 <p align="center">
  <h3 align="center">A project to create the most un-Win11 terminal</h3>
  <p align="center">
-   You can use it by following the information in the directory.
-   <br />
-   <br />
-   <a href="https://github.com/oneachina/Huki-terminal">View Repository</a>
-   ·
-   <a href="https://github.com/oneachina/Huki-terminal/issues">Report Bug or Feature</a>
-   ·
-   <a href="https://github.com/oneachina/Huki-terminal/pulls">Submit Pull Request</a>
+    You can use it by following the information in the directory.
+    <br>
+    <br>
+    <a href="https://github.com/oneachina/Huki-terminal">View Repository</a>
+    ·
+    <a href="https://github.com/oneachina/Huki-terminal/issues">Report Bug or Feature</a>
+    ·
+    <a href="https://github.com/oneachina/Huki-terminal/pulls">Submit Pull Request</a>
+    ·
+    <a href="https://github.com/oneachina/Huki-terminal/blob/main/README_ZH.md">Chinese Readme</a>
 </p>
-
-中文请去[README_ZH.md](https://github.com/oneachina/Huki/blob/main/README_ZH.md)
 
 ## Table of Contents
 
@@ -36,7 +36,6 @@ A GUI terminal by Python3.
 - [Differences from python-cmd](#differences-from-python-cmd)
 - [Roadmap](#roadmap)
 - [Getting Started](#getting-started)
-- [File Structure](#file-structure)
 - [Authors](#authors)
 
 ### Differences from [python-cmd](https://github.com/CodeCrafter-TL/python-cmd)
